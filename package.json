@@ -1,16 +1,14 @@
 {
-      "name": "chat-app",
-      "type": "module",
-      "scripts": {
-            "dev": "vite",
-            "start": "node server.js",
-            "serve": "concurrently \"npm run dev\" \"npm run start\""
-      },
-      "dependencies": {
-            "concurrently": "^8.2.1",
-            "ws": "^8.13.0"
-      },
-      "devDependencies": {
-            "vite": "^4.5.9"
-      }
+  "name": "chat-app",
+  "type": "module",
+  "scripts": {
+    "dev": "vite"
+  },
+  "dependencies": {
+    "concurrently": "^8.2.1",
+    "ws": "^8.13.0"
+  },
+  "devDependencies": {
+    "vite": "^4.5.9"
+  }
 }
