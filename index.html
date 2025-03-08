@@ -203,12 +203,7 @@
       // Replace with your Pusher key
       pusher = new Pusher('YOUR_PUSHER_KEY', {
         cluster: 'YOUR_PUSHER_CLUSTER',
-        authEndpoint: '/api/pusher-auth',
-        auth: {
-          params: {
-            userId: userId
-          }
-        }
+        forceTLS: true
       });
     }
 
@@ -217,7 +212,8 @@
         channel.unsubscribe();
       }
       
-      channel = pusher.subscribe(`presence-room-${roomId}`);
+      // Use a public channel instead of presence channel to avoid auth issues
+      channel = pusher.subscribe(`room-${roomId}`);
       
       channel.bind('room-created', function(data) {
         console.log('Room created:', data);
@@ -250,17 +246,17 @@
           currentRoomId = data.roomId;
           roomCodeDisplay.textContent = `Room Code: ${data.roomId} | Your Name: ${data.userName}`;
           startContainer.style.display = 'none';
-          chatContainer.style.display = 'block';
+          chatContainer.style.display = 'flex';
           
           // Initialize Pusher and subscribe to the room
           initPusher();
           subscribeToRoom(data.roomId);
         } else {
-          alert('Error creating room');
+          alert('Error creating room: ' + (data.message || 'Unknown error'));
         }
       } catch (error) {
         console.error('Error:', error);
-        alert('Failed to create room');
+        alert('Failed to create room: ' + error.message);
       }
     });
 
@@ -290,7 +286,7 @@
           currentRoomId = data.roomId;
           roomCodeDisplay.textContent = `Room Code: ${data.roomId} | Your Name: ${data.userName}`;
           startContainer.style.display = 'none';
-          chatContainer.style.display = 'block';
+          chatContainer.style.display = 'flex';
           
           // Initialize Pusher and subscribe to the room
           initPusher();
@@ -308,7 +304,7 @@
         }
       } catch (error) {
         console.error('Error:', error);
-        alert('Failed to join room');
+        alert('Failed to join room: ' + error.message);
       }
     });
 
@@ -335,7 +331,7 @@
         });
       } catch (error) {
         console.error('Error sending message:', error);
-        alert('Failed to send message');
+        alert('Failed to send message: ' + error.message);
       }
     });
 

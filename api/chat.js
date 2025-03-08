@@ -91,8 +91,8 @@ export default async function handler(req, res) {
         const userName = room.getUniqueFunnyName();
         userNames.set(data.userId, userName);
         
-        // Create a private channel for this room
-        await pusher.trigger(`presence-room-${roomId}`, 'room-created', {
+        // Use a public channel instead of presence channel
+        await pusher.trigger(`room-${roomId}`, 'room-created', {
           roomId,
           userName
         });
@@ -134,7 +134,7 @@ export default async function handler(req, res) {
           room.addMessage(messageData);
           
           // Broadcast the message to all clients in the room
-          await pusher.trigger(`presence-room-${data.roomId}`, 'new-message', messageData);
+          await pusher.trigger(`room-${data.roomId}`, 'new-message', messageData);
           
           // Check for AI response
           const aiResponse = room.handleAIResponse(data.content);
@@ -145,7 +145,7 @@ export default async function handler(req, res) {
               timestamp: new Date().toISOString()
             };
             room.addMessage(aiMessageData);
-            await pusher.trigger(`presence-room-${data.roomId}`, 'new-message', aiMessageData);
+            await pusher.trigger(`room-${data.roomId}`, 'new-message', aiMessageData);
           }
           
           res.status(200).json({ success: true });
@@ -158,7 +158,7 @@ export default async function handler(req, res) {
       }
     } catch (error) {
       console.error('Error processing request:', error);
-      res.status(500).json({ type: 'error', message: 'Server error' });
+      res.status(500).json({ type: 'error', message: 'Server error: ' + error.message });
     }
   } else {
     res.status(405).json({ type: 'error', message: 'Method not allowed' });
