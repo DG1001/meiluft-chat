@@ -1,6 +1,6 @@
 Flask==2.3.3
 Flask-SocketIO==5.3.4
 python-dotenv==1.0.0
-openai==1.35.3
+openai==1.65.4
 requests==2.32.3
 Pillow==10.3.0
