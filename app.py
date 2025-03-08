@@ -3,9 +3,15 @@ from flask_socketio import SocketIO, emit, join_room, leave_room
 import random
 import json
 from datetime import datetime
+from openai import OpenAI
+from dotenv import load_dotenv
+import os
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key'
+load_dotenv()
+openai_client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Funny names for users
@@ -72,9 +78,29 @@ class ChatRoom:
         self.assigned_names.add(name)
         return name
     
+    def get_ai_response(self, message_content, history):
+        """Get a response from GPT-4o-mini based on chat history."""
+        messages = [{'role': 'system', 'content': 'You are a friendly, witty AI assistant named ChatGPT-Mini.'}]
+        messages.extend(history)  # Include chat history
+        messages.append({'role': 'user', 'content': message_content})
+        response = openai_client.chat.completions.create(
+            model='gpt-4o-mini',
+            messages=messages,
+            max_tokens=150,
+            temperature=0.7
+        )
+        return response.choices[0].message.content.strip()
+
     def handle_ai_response(self, message_content):
-        if message_content.startswith('ai:'):
-            return f"I received your message: \"{message_content[3:].strip()}\""
+        """Determine if AI should respond and generate a response."""
+        num_clients = len(self.clients)
+        history = [{'role': 'user' if msg['sender'] != self.ai_name else 'assistant', 
+                    'content': msg['content']} for msg in self.messages[-5:]]  # Last 5 messages for context
+        
+        if num_clients == 1:  # Only one user: AI responds to everything
+            return self.get_ai_response(message_content, history)
+        elif message_content.startswith('ai:'):  # Multiple users: AI responds only if invoked
+            return self.get_ai_response(message_content[3:].strip(), history)
         return None
 
 def generate_room_id():
