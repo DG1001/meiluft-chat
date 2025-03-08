@@ -1,17 +1,10 @@
 {
-  "name": "chat-app",
-  "type": "module",
+  "name": "meiluft-chat",
+  "version": "1.0.0",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "vercel-build": "vite build"
+    "dev": "vite"
   },
   "dependencies": {
-    "pusher": "^5.2.0",
-    "pusher-js": "^8.4.0",
-    "ws": "^8.13.0"
-  },
-  "devDependencies": {
-    "vite": "^4.5.9"
+    "ws": "^8.7.0"
   }
 }
