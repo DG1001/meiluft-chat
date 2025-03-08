@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, session
 from flask_socketio import SocketIO, emit, join_room, leave_room
 import random
 import json
@@ -84,7 +84,7 @@ def handle_disconnect():
     # Find and remove client from any rooms
     for room_id, room in rooms.items():
         if request.sid in room.clients:
-            user_name = next((name for name in room.assigned_names if name in request.session.get('user_names', {}).values()), None)
+            user_name = next((name for name in room.assigned_names if name in session.get('user_names', {}).values()), None)
             room.remove_client(request.sid, user_name)
             if not room.clients:  # If room is empty, remove it
                 rooms.pop(room_id, None)
@@ -103,9 +103,9 @@ def handle_create():
     join_room(room_id)
     
     # Store user name in session
-    if 'user_names' not in request.session:
-        request.session['user_names'] = {}
-    request.session['user_names'][room_id] = user_name
+    if 'user_names' not in session:
+        session['user_names'] = {}
+    session['user_names'][room_id] = user_name
     
     emit('created', {'type': 'created', 'roomId': room_id, 'userName': user_name})
 
@@ -118,9 +118,9 @@ def handle_join(data):
         join_room(room_id)
         
         # Store user name in session
-        if 'user_names' not in request.session:
-            request.session['user_names'] = {}
-        request.session['user_names'][room_id] = user_name
+        if 'user_names' not in session:
+            session['user_names'] = {}
+        session['user_names'][room_id] = user_name
         
         # Send chat history
         if room.messages:
@@ -135,7 +135,7 @@ def handle_message(data):
     room_id = next((room_id for room_id, room in rooms.items() if request.sid in room.clients), None)
     if room_id:
         room = rooms[room_id]
-        user_name = request.session.get('user_names', {}).get(room_id)
+        user_name = session.get('user_names', {}).get(room_id)
         if not user_name:
             user_name = "Anonymous"
         
@@ -160,4 +160,4 @@ def handle_message(data):
             }, room=room_id)
 
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=5000, debug=True)
+    socketio.run(app, host='0.0.0.0', port=5000, debug=True, use_reloader=False)
