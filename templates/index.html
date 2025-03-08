@@ -264,7 +264,7 @@
     document.getElementById('join-room').addEventListener('click', () => {
       const roomId = document.getElementById('room-id').value.trim().toLowerCase();
       if (roomId) {
-        console.log(`Joining room: ${roomId}`);
+        console.log(`Sending join request: roomId = '${roomId}'`);
         socket.emit('join', { roomId });
       } else {
         alert('Please enter a room ID.');

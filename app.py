@@ -114,18 +114,20 @@ def handle_create():
     session['user_names'][room_id] = user_name
     
     emit('created', {'type': 'created', 'roomId': room_id, 'userName': user_name})
+    print(f"Room created successfully: '{room_id}'")
 
 @socketio.on('join')
 def handle_join(data):
     room_id = data.get('roomId')
     if room_id:
         room_id = room_id.lower().strip()  # Normalize to lowercase and strip
-    print(f"Attempting to join room: '{room_id}'")
-    print(f"Current rooms: {list(rooms.keys())}")
+    print(f"Received join request: raw data = {data}, normalized room_id = '{room_id}'")
+    print(f"Available rooms: {list(rooms.keys())}")
     if room_id in rooms:
         room = rooms[room_id]
         user_name = room.add_client(request.sid)
         join_room(room_id)
+        print(f"Join successful: '{room_id}' with user '{user_name}'")
         
         # Store user name in session
         if 'user_names' not in session:
@@ -138,7 +140,7 @@ def handle_join(data):
         
         emit('joined', {'type': 'joined', 'roomId': room_id, 'userName': user_name})
     else:
-        emit('error', {'type': 'error', 'message': 'Room not found'})
+        emit('error', {'type': 'error', 'message': f"Room '{room_id}' not found"})
 
 @socketio.on('message')
 def handle_message(data):
