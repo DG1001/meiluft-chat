@@ -17,6 +17,13 @@ funny_names = [
     "Bouncy Bunny", "Charming Chinchilla", "Radiant Raccoon", "Dizzy Dingo"
 ]
 
+# Word list for three-word room codes
+room_words = [
+    "sun", "house", "steak", "moon", "tree", "river", "cloud", "stone", "wind",
+    "lake", "bird", "fish", "star", "hill", "path", "rain", "snow", "fire",
+    "leaf", "wave", "sand", "rock", "sky", "field", "door", "light", "shadow"
+]
+
 # Store rooms and messages
 rooms = {}
 
@@ -65,8 +72,7 @@ class ChatRoom:
         return None
 
 def generate_room_id():
-    chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
-    return ''.join(random.choice(chars) for _ in range(6))
+    return '.'.join(random.choice(room_words) for _ in range(3))
 
 # Routes
 @app.route('/')
@@ -112,6 +118,9 @@ def handle_create():
 @socketio.on('join')
 def handle_join(data):
     room_id = data.get('roomId')
+    if room_id and not all(word in room_words for word in room_id.split('.')):
+        emit('error', {'type': 'error', 'message': 'Invalid room code format'})
+        return
     if room_id in rooms:
         room = rooms[room_id]
         user_name = room.add_client(request.sid)
