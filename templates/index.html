@@ -48,7 +48,7 @@
       padding: 1.5rem;
       width: 100%;
       max-width: 450px; /* Slightly wider for modern look */
-      height: 90vh; /* Fixed height to fit viewport */
+      min-height: 90vh; /* Minimum height, allows growth */
       display: flex;
       flex-direction: column;
       gap: 1.25rem;
@@ -90,7 +90,7 @@
       flex-direction: column;
       gap: 0.75rem;
       border: 1px solid rgba(0, 0, 0, 0.02);
-      max-height: calc(100% - 8rem); /* Limit height accounting for other elements */
+      padding-bottom: 1rem; /* Extra padding at bottom for better flow */
     }
 
     .message {
@@ -100,6 +100,7 @@
       position: relative;
       word-break: break-word;
       transition: var(--transition);
+      margin: 0.25rem 0; /* Consistent vertical spacing */
     }
 
     .message.self {
@@ -107,12 +108,14 @@
       color: white;
       margin-left: auto;
       border-bottom-right-radius: 2px;
+      margin-right: 0.5rem; /* Slight offset for balance */
     }
 
     .message.other {
       background: rgba(242, 242, 247, 0.9);
       margin-right: auto;
       border-bottom-left-radius: 2px;
+      margin-left: 0.5rem; /* Slight offset for balance */
     }
 
     input {
@@ -162,10 +165,12 @@
     .flex {
       display: flex;
       gap: 0.75rem;
+      align-items: flex-end; /* Align items to bottom */
     }
 
     .flex input {
       flex: 1;
+      margin-bottom: 0; /* Remove extra margin */
     }
 
     @media (max-width: 480px) {
