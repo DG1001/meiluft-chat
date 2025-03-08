@@ -3,15 +3,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "start": "node server.js",
-    "serve": "concurrently \"npm run dev\" \"npm run start\""
+    "start": "vercel dev"
   },
   "dependencies": {
-    "concurrently": "^8.2.1",
-    "ws": "^8.13.0"
+    "ws": "^8.13.0",
+    "@vercel/node": "^2.15.3"
   },
   "devDependencies": {
-    "vite": "^4.5.9",
-    "@vercel/node": "^2.15.7"
+    "vite": "^4.5.9"
   }
 }

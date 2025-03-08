@@ -85,15 +85,9 @@ function generateRoomId() {
 
 export default function handler(req, res) {
   if (req.method === 'GET') {
-    res.setHeader('Content-Type', 'text/html');
-    res.status(200).send('WebSocket server running');
-    return;
-  }
-
-  if (req.method === 'POST') {
     const server = createServer((req, res) => {
       res.writeHead(200, { 'Content-Type': 'text/html' });
-      res.end('WebSocket server running');
+      res.end('WebSocket server is running');
     });
 
     const wss = new WebSocketServer({ server });
@@ -152,5 +146,9 @@ export default function handler(req, res) {
     server.listen(3000, () => {
       console.log('Server running on http://localhost:3000');
     });
+
+    res.status(200).json({ message: 'WebSocket server started' });
+  } else {
+    res.status(405).json({ message: 'Method not allowed' });
   }
 }
