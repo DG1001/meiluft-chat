@@ -45,7 +45,7 @@ class ChatRoom:
         self.clients = set()
         self.messages = []
         self.assigned_names = set()
-        self.ai_name = "ChatGPT-Mini"
+        self.ai_name = "AIWitMaster"
     
     def add_client(self, sid, user_name=None):
         self.clients.add(sid)
@@ -80,13 +80,13 @@ class ChatRoom:
     
     def get_ai_response(self, message_content, history):
         """Get a response from GPT-4o-mini based on chat history."""
-        messages = [{'role': 'system', 'content': 'You are a friendly, witty AI assistant named ChatGPT-Mini.'}]
+        messages = [{'role': 'system', 'content': 'You are a friendly, witty AI assistant named AIWitMaster. please be aware that we will limit your answer to 250 tokens.'}]
         messages.extend(history)  # Include chat history
         messages.append({'role': 'user', 'content': message_content})
         response = openai_client.chat.completions.create(
             model='gpt-4o-mini',
             messages=messages,
-            max_tokens=150,
+            max_tokens=250,
             temperature=0.7
         )
         return response.choices[0].message.content.strip()
