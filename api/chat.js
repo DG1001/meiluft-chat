@@ -1,4 +1,5 @@
 import { WebSocketServer } from 'ws';
+import { createServer } from 'http';
 
 const funnyNames = [
   "Silly Goose", "Wacky Wombat", "Crazy Cat", "Bubbly Bear",
@@ -84,20 +85,32 @@ function generateRoomId() {
 
 export default function handler(req, res) {
   if (req.method === 'GET') {
-    res.status(200).send('WebSocket server is running');
-  } else if (req.method === 'POST') {
-    const wss = new WebSocketServer({ noServer: true });
-    wss.handleUpgrade(req, req.socket, Buffer.alloc(0), (ws) => {
+    res.setHeader('Content-Type', 'text/html');
+    res.status(200).send('WebSocket server running');
+    return;
+  }
+
+  if (req.method === 'POST') {
+    const server = createServer((req, res) => {
+      res.writeHead(200, { 'Content-Type': 'text/html' });
+      res.end('WebSocket server running');
+    });
+
+    const wss = new WebSocketServer({ server });
+
+    wss.on('connection', (ws) => {
       ws.on('message', (message) => {
         try {
           const data = JSON.parse(message);
+          
           if (data.type === 'create') {
             const roomId = generateRoomId();
             const room = new ChatRoom(roomId);
             rooms.set(roomId, room);
             room.addClient(ws);
             ws.send(JSON.stringify({ type: 'created', roomId, userName: ws.userName }));
-          } else if (data.type === 'join') {
+          }
+          else if (data.type === 'join') {
             const room = rooms.get(data.roomId);
             if (room) {
               room.addClient(ws);
@@ -105,7 +118,8 @@ export default function handler(req, res) {
             } else {
               ws.send(JSON.stringify({ type: 'error', message: 'Room not found' }));
             }
-          } else if (data.type === 'message') {
+          }
+          else if (data.type === 'message') {
             const room = rooms.get(ws.roomId);
             if (room) {
               const messageData = {
@@ -133,6 +147,10 @@ export default function handler(req, res) {
           room.removeClient(ws);
         }
       });
+    });
+
+    server.listen(3000, () => {
+      console.log('Server running on http://localhost:3000');
     });
   }
 }
