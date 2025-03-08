@@ -1,5 +1,13 @@
-import { WebSocketServer } from 'ws';
-import { createServer } from 'http';
+import Pusher from 'pusher';
+
+// Initialize Pusher
+const pusher = new Pusher({
+  appId: process.env.PUSHER_APP_ID,
+  key: process.env.PUSHER_KEY,
+  secret: process.env.PUSHER_SECRET,
+  cluster: process.env.PUSHER_CLUSTER,
+  useTLS: true
+});
 
 const funnyNames = [
   "Silly Goose", "Wacky Wombat", "Crazy Cat", "Bubbly Bear",
@@ -9,31 +17,17 @@ const funnyNames = [
   "Bouncy Bunny", "Charming Chinchilla", "Radiant Raccoon", "Dizzy Dingo"
 ];
 
+// In-memory storage (Note: this will reset on each function invocation)
+// For production, use a database like MongoDB, Fauna, or Supabase
+const rooms = new Map();
+const userNames = new Map();
+
 class ChatRoom {
   constructor(id) {
     this.id = id;
-    this.clients = new Set();
     this.messages = [];
-    this.assignedNames = new Set(); // Track assigned names
-    this.aiName = "ChatGPT-Mini"; // AI agent name
-  }
-
-  addClient(ws) {
-    this.clients.add(ws);
-    ws.roomId = this.id;
-    ws.userName = this.getUniqueFunnyName(); // Assign a unique funny name
-    // Send chat history to new client
-    if (this.messages.length > 0) {
-      ws.send(JSON.stringify({
-        type: 'history',
-        messages: this.messages
-      }));
-    }
-  }
-
-  removeClient(ws) {
-    this.clients.delete(ws);
-    this.assignedNames.delete(ws.userName); // Remove name when client leaves
+    this.assignedNames = new Set();
+    this.aiName = "ChatGPT-Mini";
   }
 
   addMessage(message) {
@@ -42,14 +36,6 @@ class ChatRoom {
     if (this.messages.length > 100) {
       this.messages.shift();
     }
-  }
-
-  broadcast(message, sender) {
-    this.clients.forEach(client => {
-      if (client !== sender && client.readyState === WebSocket.OPEN) {
-        client.send(JSON.stringify(message));
-      }
-    });
   }
 
   getUniqueFunnyName() {
@@ -62,19 +48,13 @@ class ChatRoom {
     return name;
   }
 
-  handleAIResponse(messageContent, sender) {
+  handleAIResponse(messageContent) {
     if (messageContent.startsWith('ai:')) {
-      const response = `AI (${this.aiName}): I received your message: "${messageContent.slice(3).trim()}"`;
-      this.broadcast({
-        type: 'message',
-        content: response,
-        sender: this.aiName
-      }, sender);
+      return `AI (${this.aiName}): I received your message: "${messageContent.slice(3).trim()}"`;
     }
+    return null;
   }
 }
-
-const rooms = new Map();
 
 function generateRoomId() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -85,78 +65,102 @@ function generateRoomId() {
   return id;
 }
 
-const server = createServer(); // Create a standard HTTP server
-const wss = new WebSocketServer({ noServer: true }); // Initialize WebSocket server
+export default async function handler(req, res) {
+  // Enable CORS
+  res.setHeader('Access-Control-Allow-Credentials', true);
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,POST');
+  res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
 
-wss.on('connection', (ws) => {
-  ws.on('message', (message) => {
+  // Handle OPTIONS request
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+
+  if (req.method === 'POST') {
     try {
-      const data = JSON.parse(message);
-
+      const data = req.body;
+      
       if (data.type === 'create') {
         const roomId = generateRoomId();
-        const room = new ChatRoom(roomId);
-        rooms.set(roomId, room);
-        room.addClient(ws);
-        ws.send(JSON.stringify({ type: 'created', roomId, userName: ws.userName }));
+        if (!rooms.has(roomId)) {
+          rooms.set(roomId, new ChatRoom(roomId));
+        }
+        const room = rooms.get(roomId);
+        const userName = room.getUniqueFunnyName();
+        userNames.set(data.userId, userName);
+        
+        // Create a private channel for this room
+        await pusher.trigger(`presence-room-${roomId}`, 'room-created', {
+          roomId,
+          userName
+        });
+        
+        res.status(200).json({ 
+          type: 'created', 
+          roomId, 
+          userName 
+        });
       }
       else if (data.type === 'join') {
         const room = rooms.get(data.roomId);
         if (room) {
-          room.addClient(ws);
-          ws.send(JSON.stringify({ type: 'joined', roomId: data.roomId, userName: ws.userName }));
+          const userName = room.getUniqueFunnyName();
+          userNames.set(data.userId, userName);
+          
+          // Send chat history through the response
+          res.status(200).json({ 
+            type: 'joined', 
+            roomId: data.roomId, 
+            userName,
+            messages: room.messages
+          });
         } else {
-          ws.send(JSON.stringify({ type: 'error', message: 'Room not found' }));
+          res.status(404).json({ type: 'error', message: 'Room not found' });
         }
       }
       else if (data.type === 'message') {
-        const room = rooms.get(ws.roomId);
+        const room = rooms.get(data.roomId);
         if (room) {
+          const userName = userNames.get(data.userId) || 'Anonymous';
+          
           const messageData = {
             content: data.content,
-            sender: ws.userName, // Use the user's funny name
+            sender: userName,
             timestamp: new Date().toISOString()
           };
+          
           room.addMessage(messageData);
-          room.broadcast({
-            type: 'message',
-            content: data.content,
-            sender: ws.userName // Send the user's funny name
-          }, ws);
-          room.handleAIResponse(data.content, ws); // Check for AI response
+          
+          // Broadcast the message to all clients in the room
+          await pusher.trigger(`presence-room-${data.roomId}`, 'new-message', messageData);
+          
+          // Check for AI response
+          const aiResponse = room.handleAIResponse(data.content);
+          if (aiResponse) {
+            const aiMessageData = {
+              content: aiResponse,
+              sender: room.aiName,
+              timestamp: new Date().toISOString()
+            };
+            room.addMessage(aiMessageData);
+            await pusher.trigger(`presence-room-${data.roomId}`, 'new-message', aiMessageData);
+          }
+          
+          res.status(200).json({ success: true });
+        } else {
+          res.status(404).json({ type: 'error', message: 'Room not found' });
         }
       }
+      else {
+        res.status(400).json({ type: 'error', message: 'Invalid request type' });
+      }
     } catch (error) {
-      console.error('Error processing message:', error);
+      console.error('Error processing request:', error);
+      res.status(500).json({ type: 'error', message: 'Server error' });
     }
-  });
-
-  ws.on('close', () => {
-    const room = rooms.get(ws.roomId);
-    if (room) {
-      room.removeClient(ws);
-    }
-  });
-});
-
-server.on('upgrade', (request, socket, head) => {
-  wss.handleUpgrade(request, socket, head, (ws) => {
-    wss.emit('connection', ws, request);
-  });
-});
-
-
-export default (req, res) => {
-    if (req.url === '/api/chat') {
-        // Vercel handles the upgrade, so we just need to attach our WebSocket server
-        if (!server.listening) {
-            server.listen(0, '127.0.0.1', () => { // Listen on a random port, Vercel handles the actual external port
-                console.log(`Server listening for upgrades on a random port`);
-            });
-        }
-        // Do nothing here, the 'upgrade' event will handle the WebSocket connection
-        res.status(200).send('WebSocket endpoint ready');
-    } else {
-        res.status(404).send('Not Found');
-    }
-};
+  } else {
+    res.status(405).json({ type: 'error', message: 'Method not allowed' });
+  }
+}

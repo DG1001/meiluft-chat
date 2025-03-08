@@ -2,10 +2,13 @@
   "name": "chat-app",
   "type": "module",
   "scripts": {
-    "dev": "vite"
+    "dev": "vite",
+    "build": "vite build",
+    "vercel-build": "vite build"
   },
   "dependencies": {
-    "concurrently": "^8.2.1",
+    "pusher": "^5.2.0",
+    "pusher-js": "^8.4.0",
     "ws": "^8.13.0"
   },
   "devDependencies": {
