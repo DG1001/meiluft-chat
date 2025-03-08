@@ -1,326 +1,277 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Meiluft Chat</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-      background-color: #f5f5f5;
-    }
-    
-    .container {
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 20px;
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-    }
-    
-    .header {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-    
-    .chat-container {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      background-color: white;
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-      overflow: hidden;
-    }
-    
-    .room-info {
-      padding: 15px;
-      background-color: #4a69bd;
-      color: white;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    
-    .room-id {
-      font-weight: bold;
-      font-size: 1.2em;
-    }
-    
-    .user-name {
-      font-style: italic;
-    }
-    
-    .messages {
-      flex: 1;
-      padding: 15px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    
-    .message {
-      padding: 10px 15px;
-      border-radius: 18px;
-      max-width: 70%;
-      word-wrap: break-word;
-    }
-    
-    .message.sent {
-      align-self: flex-end;
-      background-color: #4a69bd;
-      color: white;
-    }
-    
-    .message.received {
-      align-self: flex-start;
-      background-color: #e9e9e9;
-      color: #333;
-    }
-    
-    .message-sender {
-      font-size: 0.8em;
-      margin-bottom: 5px;
-      font-weight: bold;
-    }
-    
-    .input-area {
-      display: flex;
-      padding: 15px;
-      background-color: #f9f9f9;
-      border-top: 1px solid #ddd;
-    }
-    
-    #message-input {
-      flex: 1;
-      padding: 10px 15px;
-      border: 1px solid #ddd;
-      border-radius: 20px;
-      outline: none;
-      font-size: 1em;
-    }
-    
-    #send-button {
-      margin-left: 10px;
-      padding: 10px 20px;
-      background-color: #4a69bd;
-      color: white;
-      border: none;
-      border-radius: 20px;
-      cursor: pointer;
-      font-size: 1em;
-    }
-    
-    #send-button:hover {
-      background-color: #3a559c;
-    }
-    
-    .welcome-screen {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 20px;
-      height: 100%;
-    }
-    
-    .welcome-buttons {
-      display: flex;
-      gap: 15px;
-    }
-    
-    .welcome-button {
-      padding: 12px 25px;
-      background-color: #4a69bd;
-      color: white;
-      border: none;
-      border-radius: 25px;
-      cursor: pointer;
-      font-size: 1.1em;
-      transition: background-color 0.2s;
-    }
-    
-    .welcome-button:hover {
-      background-color: #3a559c;
-    }
-    
-    .join-form {
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-      width: 100%;
-      max-width: 300px;
-    }
-    
-    .join-form input {
-      padding: 12px 15px;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      font-size: 1em;
-    }
-    
-    .hidden {
-      display: none !important;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <h1>Meiluft Chat</h1>
-    </div>
-    
-    <div id="welcome-screen" class="welcome-screen">
-      <h2>Welcome to Meiluft Chat</h2>
-      <div class="welcome-buttons">
-        <button id="create-room-btn" class="welcome-button">Create Room</button>
-        <button id="join-room-btn" class="welcome-button">Join Room</button>
-      </div>
-      <div id="join-form" class="join-form hidden">
-        <input type="text" id="room-id-input" placeholder="Enter Room ID" maxlength="6">
-        <button id="join-submit-btn" class="welcome-button">Join</button>
-      </div>
-    </div>
-    
-    <div id="chat-container" class="chat-container hidden">
-      <div class="room-info">
-        <div>Room: <span id="room-id-display" class="room-id"></span></div>
-        <div>You: <span id="user-name-display" class="user-name"></span></div>
-      </div>
-      <div id="messages" class="messages"></div>
-      <div class="input-area">
-        <input type="text" id="message-input" placeholder="Type a message...">
-        <button id="send-button">Send</button>
-      </div>
-    </div>
-  </div>
-  
-  <script src="/socket.io/socket.io.js"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const socket = io();
-      
-      // DOM elements
-      const welcomeScreen = document.getElementById('welcome-screen');
-      const chatContainer = document.getElementById('chat-container');
-      const createRoomBtn = document.getElementById('create-room-btn');
-      const joinRoomBtn = document.getElementById('join-room-btn');
-      const joinForm = document.getElementById('join-form');
-      const roomIdInput = document.getElementById('room-id-input');
-      const joinSubmitBtn = document.getElementById('join-submit-btn');
-      const roomIdDisplay = document.getElementById('room-id-display');
-      const userNameDisplay = document.getElementById('user-name-display');
-      const messagesContainer = document.getElementById('messages');
-      const messageInput = document.getElementById('message-input');
-      const sendButton = document.getElementById('send-button');
-      
-      // Current room and user info
-      let currentRoomId = null;
-      let currentUserName = null;
-      
-      // Event listeners
-      createRoomBtn.addEventListener('click', () => {
-        socket.emit('create');
-      });
-      
-      joinRoomBtn.addEventListener('click', () => {
-        joinForm.classList.toggle('hidden');
-      });
-      
-      joinSubmitBtn.addEventListener('click', () => {
-        const roomId = roomIdInput.value.trim().toUpperCase();
-        if (roomId) {
-          socket.emit('join', { roomId });
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Chat App</title>
+      <style>
+        :root {
+          --bg-color: #f5f5f7;
+          --card-bg: rgba(255, 255, 255, 0.8);
+          --primary-color: #007aff;
+          --text-color: #1d1d1f;
+          --border-radius: 12px;
+          --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+          --glass-bg: rgba(255, 255, 255, 0.7);
+          --glass-border: rgba(255, 255, 255, 0.3);
         }
-      });
-      
-      sendButton.addEventListener('click', sendMessage);
-      
-      messageInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-          sendMessage();
+
+        * {
+          box-sizing: border-box;
+          margin: 0;
+          padding: 0;
         }
-      });
-      
-      function sendMessage() {
-        const content = messageInput.value.trim();
-        if (content && currentRoomId) {
-          socket.emit('message', { content });
+
+        body {
+          font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+          background-color: var(--bg-color);
+          color: var(--text-color);
+          min-height: 100vh;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          padding: 20px;
+        }
+
+        .container {
+          background: var(--glass-bg);
+          backdrop-filter: blur(20px);
+          border-radius: var(--border-radius);
+          box-shadow: var(--shadow);
+          border: 1px solid var(--glass-border);
+          padding: 2rem;
+          width: 100%;
+          max-width: 400px;
+          min-height: 500px;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .start-container, .chat-container {
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
+          flex: 1;
+        }
+
+        .chat-container {
+          display: none;
+        }
+
+        .room-code {
+          background: rgba(0, 122, 255, 0.1);
+          color: var(--primary-color);
+          padding: 0.75rem;
+          border-radius: var(--border-radius);
+          text-align: center;
+          font-weight: 500;
+          margin-bottom: 1rem;
+          backdrop-filter: blur(10px);
+          border: 1px solid rgba(0, 122, 255, 0.1);
+        }
+
+        .messages {
+          flex: 1;
+          overflow-y: auto;
+          padding: 1rem;
+          background: rgba(0, 0, 0, 0.03);
+          border-radius: var(--border-radius);
+          margin-bottom: 1rem;
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
+        }
+
+        .message {
+          padding: 0.75rem 1rem;
+          border-radius: var(--border-radius);
+          max-width: 80%;
+          position: relative;
+          word-break: break-word;
+        }
+
+        .message.self {
+          background: var(--primary-color);
+          color: white;
+          margin-left: auto;
+          border-bottom-right-radius: 4px;
+        }
+
+        .message.other {
+          background: rgba(0, 0, 0, 0.05);
+          margin-right: auto;
+          border-bottom-left-radius: 4px;
+        }
+
+        input {
+          padding: 0.75rem;
+          border: none;
+          border-radius: var(--border-radius);
+          font-size: 1rem;
+          background: rgba(0, 0, 0, 0.03);
+          width: 100%;
+          backdrop-filter: blur(10px);
+          border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        button {
+          padding: 0.75rem 1.5rem;
+          border: none;
+          border-radius: var(--border-radius);
+          font-size: 1rem;
+          background: var(--primary-color);
+          color: white;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          backdrop-filter: blur(10px);
+          border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        button:hover {
+          opacity: 0.9;
+          transform: translateY(-1px);
+        }
+
+        button:active {
+          transform: translateY(0);
+        }
+
+        button:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+          transform: none;
+        }
+
+        .flex {
+          display: flex;
+          gap: 0.75rem;
+        }
+
+        .flex input {
+          flex: 1;
+        }
+
+        @media (max-width: 480px) {
+          body {
+            padding: 10px;
+          }
           
-          // Add message to UI
-          addMessageToUI(content, currentUserName, true);
-          
-          // Clear input
-          messageInput.value = '';
+          .container {
+            padding: 1.5rem;
+            min-height: 100vh;
+            border-radius: 0;
+          }
         }
-      }
-      
-      // Socket events
-      socket.on('created', (data) => {
-        currentRoomId = data.roomId;
-        currentUserName = data.userName;
-        
-        roomIdDisplay.textContent = currentRoomId;
-        userNameDisplay.textContent = currentUserName;
-        
-        welcomeScreen.classList.add('hidden');
-        chatContainer.classList.remove('hidden');
-      });
-      
-      socket.on('joined', (data) => {
-        currentRoomId = data.roomId;
-        currentUserName = data.userName;
-        
-        roomIdDisplay.textContent = currentRoomId;
-        userNameDisplay.textContent = currentUserName;
-        
-        welcomeScreen.classList.add('hidden');
-        chatContainer.classList.remove('hidden');
-      });
-      
-      socket.on('history', (data) => {
-        messagesContainer.innerHTML = '';
-        data.messages.forEach(msg => {
-          addMessageToUI(msg.content, msg.sender, msg.sender === currentUserName);
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="start-container">
+          <button id="create-room">Create New Room</button>
+          <div class="flex">
+            <input type="text" id="room-id" placeholder="Enter Room Code">
+            <button id="join-room">Join</button>
+          </div>
+        </div>
+
+        <div class="chat-container">
+          <div class="room-code" id="room-code-display"></div>
+          <div class="messages" id="messages"></div>
+          <div class="flex">
+            <input type="text" id="message-input" placeholder="Type your message">
+            <button id="send">Send</button>
+          </div>
+        </div>
+      </div>
+
+      <script>
+        let ws;
+        const startContainer = document.querySelector('.start-container');
+        const chatContainer = document.querySelector('.chat-container');
+        const messagesDiv = document.getElementById('messages');
+        const messageInput = document.getElementById('message-input');
+        const roomCodeDisplay = document.getElementById('room-code-display');
+
+        function connectWebSocket() {
+          ws = new WebSocket('ws://localhost:3000');
+
+          ws.onopen = () => {
+            console.log('WebSocket connection established');
+            document.getElementById('create-room').disabled = false;
+            document.getElementById('join-room').disabled = false;
+          };
+
+          ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            console.log('Message received:', data);
+            
+            if (data.type === 'created') {
+              roomCodeDisplay.textContent = `Room Code: ${data.roomId} | Your Name: ${data.userName}`;
+              startContainer.style.display = 'none';
+              chatContainer.style.display = 'block';
+            }
+            else if (data.type === 'joined') {
+              roomCodeDisplay.textContent = `Room Code: ${data.roomId} | Your Name: ${data.userName}`;
+              startContainer.style.display = 'none';
+              chatContainer.style.display = 'block';
+            }
+            else if (data.type === 'message') {
+              addMessage(data.content, 'other', data.sender); // Include sender's name
+            }
+            else if (data.type === 'history') {
+              messagesDiv.innerHTML = '';
+              data.messages.forEach(msg => {
+                addMessage(msg.content, 'other', msg.sender); // Include sender's name
+              });
+            }
+            else if (data.type === 'error') {
+              alert(data.message);
+            }
+          };
+
+          ws.onclose = () => {
+            console.log('WebSocket connection closed');
+            setTimeout(connectWebSocket, 1000);
+          };
+        }
+
+        document.getElementById('create-room').addEventListener('click', () => {
+          if (ws.readyState === WebSocket.OPEN) {
+            console.log('Creating new room...');
+            ws.send(JSON.stringify({ type: 'create' }));
+          } else {
+            alert('Connection not ready. Please try again.');
+          }
         });
-      });
-      
-      socket.on('message', (data) => {
-        addMessageToUI(data.content, data.sender, false);
-      });
-      
-      socket.on('error', (data) => {
-        alert(data.message);
-      });
-      
-      // Helper functions
-      function addMessageToUI(content, sender, isSent) {
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `message ${isSent ? 'sent' : 'received'}`;
-        
-        const senderDiv = document.createElement('div');
-        senderDiv.className = 'message-sender';
-        senderDiv.textContent = sender;
-        
-        const contentDiv = document.createElement('div');
-        contentDiv.textContent = content;
-        
-        messageDiv.appendChild(senderDiv);
-        messageDiv.appendChild(contentDiv);
-        
-        messagesContainer.appendChild(messageDiv);
-        
-        // Scroll to bottom
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
-      }
-    });
-  </script>
-</body>
-</html>
+
+        document.getElementById('join-room').addEventListener('click', () => {
+          const roomId = document.getElementById('room-id').value.trim();
+          if (roomId && ws.readyState === WebSocket.OPEN) {
+            console.log(`Joining room: ${roomId}`);
+            ws.send(JSON.stringify({ type: 'join', roomId }));
+          } else {
+            alert('Please enter a room ID and ensure connection is ready.');
+          }
+        });
+
+        document.getElementById('send').addEventListener('click', () => {
+          const message = messageInput.value.trim();
+          if (message && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: 'message', content: message }));
+            addMessage(message, 'self', 'You'); // Display "You" for self
+            messageInput.value = '';
+          }
+        });
+
+        function addMessage(content, type, sender) {
+          const messageDiv = document.createElement('div');
+          messageDiv.className = `message ${type}`;
+          messageDiv.innerHTML = `<strong>${sender}:</strong> ${content}`; // Include sender's name
+          messagesDiv.appendChild(messageDiv);
+          messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        connectWebSocket();
+      </script>
+    </body>
+    </html>
