@@ -118,9 +118,10 @@ def handle_create():
 @socketio.on('join')
 def handle_join(data):
     room_id = data.get('roomId')
-    if room_id and not all(word in room_words for word in room_id.split('.')):
-        emit('error', {'type': 'error', 'message': 'Invalid room code format'})
-        return
+    if room_id:
+        room_id = room_id.lower().strip()  # Normalize to lowercase and strip
+    print(f"Attempting to join room: '{room_id}'")
+    print(f"Current rooms: {list(rooms.keys())}")
     if room_id in rooms:
         room = rooms[room_id]
         user_name = room.add_client(request.sid)

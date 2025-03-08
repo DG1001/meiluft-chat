@@ -186,7 +186,7 @@
     <div class="start-container">
       <button id="create-room">Create New Room</button>
       <div class="flex">
-        <input type="text" id="room-id" placeholder="Enter Room Code">
+        <input type="text" id="room-id" placeholder="e.g., sun.house.steak">
         <button id="join-room">Join</button>
       </div>
     </div>
@@ -262,7 +262,7 @@
     });
 
     document.getElementById('join-room').addEventListener('click', () => {
-      const roomId = document.getElementById('room-id').value.trim();
+      const roomId = document.getElementById('room-id').value.trim().toLowerCase();
       if (roomId) {
         console.log(`Joining room: ${roomId}`);
         socket.emit('join', { roomId });
