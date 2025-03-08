@@ -10,11 +10,14 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Funny names for users
 funny_names = [
-    "Silly Goose", "Wacky Wombat", "Crazy Cat", "Bubbly Bear",
-    "Jolly Jellyfish", "Sassy Sloth", "Dizzy Dolphin", "Cheeky Monkey",
-    "Nerdy Narwhal", "Funky Flamingo", "Quirky Quokka", "Zany Zebra",
-    "Playful Penguin", "Dapper Duck", "Giggly Giraffe", "Mischievous Mongoose",
-    "Bouncy Bunny", "Charming Chinchilla", "Radiant Raccoon", "Dizzy Dingo"
+    "Silly Goose", "Wacky Wombat", "Crazy Cat", "Bubbly Bear", "Jolly Jellyfish",
+    "Sassy Sloth", "Dizzy Dolphin", "Cheeky Monkey", "Nerdy Narwhal", "Funky Flamingo",
+    "Quirky Quokka", "Zany Zebra", "Playful Penguin", "Dapper Duck", "Giggly Giraffe",
+    "Mischievous Mongoose", "Bouncy Bunny", "Charming Chinchilla", "Radiant Raccoon", "Dizzy Dingo",
+    "Peppy Panda", "Lively Lemur", "Goofy Gopher", "Ticklish Toad", "Whimsical Walrus",
+    "Prancing Puma", "Snoozy Sparrow", "Jumpy Jaguar", "Kooky Koala", "Merry Meerkat",
+    "Bizarre Badger", "Cuddly Coyote", "Fizzy Ferret", "Hoppy Hippo", "Puffy Puffin",
+    "Snazzy Squirrel", "Twirly Turtle", "Vivid Vulture", "Wiggly Weasel", "Zippy Zucchini"
 ]
 
 # Global rooms dictionary (ensure it persists)
