@@ -48,12 +48,11 @@
       padding: 1.5rem;
       width: 100%;
       max-width: 450px; /* Slightly wider for modern look */
-      max-height: 90vh; /* Limit height to 90% of viewport */
+      height: 90vh; /* Fixed height to fit viewport */
       display: flex;
       flex-direction: column;
       gap: 1.25rem;
       transition: var(--transition); /* Smooth transitions */
-      overflow: hidden; /* Prevent overflow outside container */
     }
 
     .start-container, .chat-container {
@@ -81,9 +80,7 @@
     }
 
     .messages {
-      flex-grow: 1; /* Grow to fill available space */
-      flex-shrink: 1;
-      flex-basis: 0; /* Allow it to shrink below initial size */
+      flex: 1; /* Shorthand for grow, shrink, and basis */
       overflow-y: auto;
       padding: 0.75rem;
       background: rgba(255, 255, 255, 0.6);
@@ -298,7 +295,7 @@
       messagesDiv.appendChild(messageDiv);
       setTimeout(() => {
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
-      }, 0); /* Delay to ensure DOM updates */
+      }, 50); /* Slightly longer delay for reliability */
     }
 
     // Connect when the page loads
