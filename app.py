@@ -57,10 +57,7 @@ class ChatRoom:
         self.messages = []
         self.assigned_names = set()
         self.ai_name = "AIWitMaster"
-        if GENERATE_IMAGES:
-            self.image_base64 = self.generate_room_image(room_id)
-        else:
-            self.image_base64 = None
+        self.image_base64 = None  # Keine automatische Generierung mehr
     
     def add_client(self, sid, user_name=None):
         self.clients.add(sid)
@@ -114,6 +111,12 @@ class ChatRoom:
             return self.get_ai_response(message_content, history)
         elif message_content.startswith('ai:'):  # Multiple users: AI responds only if invoked
             return self.get_ai_response(message_content[3:].strip(), history)
+        return None
+
+    def trigger_image_generation(self):
+        if GENERATE_IMAGES and not self.image_base64:  # Nur generieren, wenn aktiviert und noch kein Bild existiert
+            self.image_base64 = self.generate_room_image(self.id)
+            return self.image_base64
         return None
 
     def generate_room_image(self, room_id):
@@ -239,6 +242,15 @@ def handle_message(data):
                 'content': ai_response,
                 'sender': room.ai_name
             }, room=room_id)
+
+@socketio.on('generate_image')
+def handle_generate_image():
+    room_id = next((rid for rid, room in rooms.items() if request.sid in room.clients), None)
+    if room_id and room_id in rooms:
+        room = rooms[room_id]
+        image_base64 = room.trigger_image_generation()
+        if image_base64:
+            emit('image_generated', {'type': 'image_generated', 'imageBase64': image_base64}, room=room_id)
 
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=5000, debug=True, use_reloader=False)

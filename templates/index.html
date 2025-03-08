@@ -198,6 +198,7 @@
     </div>
 
     <div class="chat-container">
+      <button id="generate-image" style="display: none; margin-bottom: 1rem;">Generate Room Image</button>
       <img id="room-image" src="" alt="Room Illustration" style="max-width: 100%; border-radius: var(--border-radius); margin-bottom: 1rem; display: none; display: block; margin: 0 auto;">
       <div class="room-code" id="room-code-display"></div>
       <div class="messages" id="messages"></div>
@@ -216,6 +217,7 @@
     const messagesDiv = document.getElementById('messages');
     const messageInput = document.getElementById('message-input');
     const roomCodeDisplay = document.getElementById('room-code-display');
+    const generateImageButton = document.getElementById('generate-image');
 
     function connectSocket() {
       socket = io();
@@ -229,13 +231,7 @@
       socket.on('created', (data) => {
         console.log('Room created:', data);
         roomCodeDisplay.textContent = `Room Code: ${data.roomId} | Your Name: ${data.userName}`;
-        const roomImage = document.getElementById('room-image');
-        if (data.imageBase64) {
-          roomImage.src = `data:image/png;base64,${data.imageBase64}`;
-          roomImage.style.display = 'block';
-        } else {
-          roomImage.style.display = 'none';
-        }
+        updateImageDisplay(data); // Bildstatus aktualisieren
         startContainer.style.display = 'none';
         chatContainer.style.display = 'block';
       });
@@ -243,13 +239,7 @@
       socket.on('joined', (data) => {
         console.log('Room joined:', data);
         roomCodeDisplay.textContent = `Room Code: ${data.roomId} | Your Name: ${data.userName}`;
-        const roomImage = document.getElementById('room-image');
-        if (data.imageBase64) {
-          roomImage.src = `data:image/png;base64,${data.imageBase64}`;
-          roomImage.style.display = 'block';
-        } else {
-          roomImage.style.display = 'none';
-        }
+        updateImageDisplay(data); // Bildstatus aktualisieren
         startContainer.style.display = 'none';
         chatContainer.style.display = 'block';
       });
@@ -272,9 +262,26 @@
         alert(data.message);
       });
 
+      socket.on('image_generated', (data) => {
+        console.log('Image generated:', data);
+        updateImageDisplay(data); // Bild anzeigen und Button ausblenden
+      });
+
       socket.on('disconnect', () => {
         console.log('Socket.IO connection closed');
       });
+    }
+
+    function updateImageDisplay(data) {
+        const roomImage = document.getElementById('room-image');
+        if (data.imageBase64) {
+            roomImage.src = `data:image/png;base64,${data.imageBase64}`;
+            roomImage.style.display = 'block';
+            generateImageButton.style.display = 'none'; // Button ausblenden, wenn Bild existiert
+        } else {
+            roomImage.style.display = 'none';
+            generateImageButton.style.display = 'block'; // Button anzeigen, wenn kein Bild
+        }
     }
 
     document.getElementById('create-room').addEventListener('click', () => {
@@ -306,6 +313,11 @@
       if (e.key === 'Enter') {
         document.getElementById('send').click();
       }
+    });
+
+    generateImageButton.addEventListener('click', () => {
+        console.log('Requesting image generation...');
+        socket.emit('generate_image');
     });
 
     function addMessage(content, type, sender) {
