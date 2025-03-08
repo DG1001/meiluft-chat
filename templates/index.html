@@ -6,17 +6,19 @@
   <title>Chat App</title>
   <style>
     :root {
-      --bg-color: #F5F5F7; /* Hintergrundfarbe */
-      --card-bg: rgba(255, 255, 255, 0.8); /* Karten-Hintergrund */
-      --primary-color: #007AFF; /* Primärfarbe (Blau) */
-      --text-color: #1D1D1F; /* Textfarbe */
-      --border-radius: 15px; /* Abrundung */
-      --shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Schatten */
-      --glass-bg: rgba(255, 255, 255, 0.7); /* Frosted-Glass-Hintergrund */
-      --glass-border: rgba(255, 255, 255, 0.3); /* Frosted-Glass-Rahmen */
-      --input-bg: rgba(255, 255, 255, 0.1); /* Eingabefeld-Hintergrund */
-      --input-text-color: #1D1D1F; /* Eingabetextfarbe */
-      --button-hover-bg: rgba(0, 122, 255, 0.2); /* Button-Hover-Hintergrund */
+      --bg-color: linear-gradient(135deg, #E8ECEF, #F2F4F5); /* Subtle macOS gradient */
+      --card-bg: rgba(255, 255, 255, 0.9); /* Slightly more opaque glass */
+      --primary-color: #0A84FF; /* macOS blue */
+      --text-color: #1C2526; /* Softer black */
+      --border-radius: 12px; /* Slightly smaller, macOS-style rounding */
+      --shadow: 0 8px 32px rgba(0, 0, 0, 0.08); /* Softer, deeper shadow */
+      --glass-bg: rgba(255, 255, 255, 0.85); /* Brighter frosted glass */
+      --glass-border: rgba(255, 255, 255, 0.5); /* Cleaner border */
+      --input-bg: rgba(242, 242, 247, 0.9); /* macOS input field */
+      --input-text-color: #1C2526; /* Consistent text */
+      --button-hover-bg: rgba(10, 132, 255, 0.15); /* Subtle hover */
+      --button-active-bg: rgba(10, 132, 255, 0.25); /* Active state */
+      --transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1); /* macOS easing */
     }
 
     * {
@@ -27,13 +29,14 @@
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-      background-color: var(--bg-color);
+      background: var(--bg-color);
       color: var(--text-color);
       min-height: 100vh;
       display: flex;
       justify-content: center;
       align-items: center;
       padding: 20px;
+      overflow: hidden; /* Prevent scrolling outside container */
     }
 
     .container {
@@ -42,13 +45,14 @@
       border-radius: var(--border-radius);
       box-shadow: var(--shadow);
       border: 1px solid var(--glass-border);
-      padding: 2rem;
+      padding: 1.5rem;
       width: 100%;
-      max-width: 400px;
+      max-width: 450px; /* Slightly wider for modern look */
       min-height: 500px;
       display: flex;
       flex-direction: column;
-      gap: 1rem; /* Abstand zwischen Komponenten */
+      gap: 1.25rem;
+      transition: var(--transition); /* Smooth transitions */
     }
 
     .start-container, .chat-container {
@@ -63,52 +67,55 @@
     }
 
     .room-code {
-      background: rgba(0, 122, 255, 0.1);
+      background: rgba(10, 132, 255, 0.05);
       color: var(--primary-color);
-      padding: 0.75rem;
+      padding: 0.5rem;
       border-radius: var(--border-radius);
       text-align: center;
       font-weight: 500;
       margin-bottom: 1rem;
       backdrop-filter: blur(10px);
-      border: 1px solid rgba(0, 122, 255, 0.1);
+      border: 1px solid rgba(10, 132, 255, 0.05);
+      font-size: 0.9rem;
     }
 
     .messages {
       flex: 1;
       overflow-y: auto;
-      padding: 1rem;
-      background: rgba(0, 0, 0, 0.03);
+      padding: 0.75rem;
+      background: rgba(255, 255, 255, 0.6);
       border-radius: var(--border-radius);
       margin-bottom: 1rem;
       display: flex;
       flex-direction: column;
       gap: 0.75rem;
+      border: 1px solid rgba(0, 0, 0, 0.02);
     }
 
     .message {
-      padding: 0.75rem 1rem;
+      padding: 0.6rem 1rem;
       border-radius: var(--border-radius);
       max-width: 80%;
       position: relative;
       word-break: break-word;
+      transition: var(--transition);
     }
 
     .message.self {
-      background: var(--primary-color);
+      background: linear-gradient(135deg, var(--primary-color), #0066CC);
       color: white;
       margin-left: auto;
-      border-bottom-right-radius: 4px;
+      border-bottom-right-radius: 2px;
     }
 
     .message.other {
-      background: rgba(0, 0, 0, 0.05);
+      background: rgba(242, 242, 247, 0.9);
       margin-right: auto;
-      border-bottom-left-radius: 4px;
+      border-bottom-left-radius: 2px;
     }
 
     input {
-      padding: 0.75rem;
+      padding: 0.7rem;
       border: none;
       border-radius: var(--border-radius);
       font-size: 1rem;
@@ -116,35 +123,39 @@
       color: var(--input-text-color);
       width: 100%;
       backdrop-filter: blur(10px);
-      border: 1px solid rgba(0, 0, 0, 0.05);
+      border: 1px solid rgba(0, 0, 0, 0.03);
+      transition: var(--transition);
+    }
+
+    input:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.2); /* Focus ring */
     }
 
     button {
-      padding: 0.75rem 1.5rem;
+      padding: 0.65rem 1.25rem;
       border: none;
       border-radius: var(--border-radius);
       font-size: 1rem;
-      background: var(--primary-color);
+      background: linear-gradient(135deg, var(--primary-color), #0066CC); /* Gradient */
       color: white;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: var(--transition);
       backdrop-filter: blur(10px);
       border: 1px solid rgba(0, 0, 0, 0.05);
+      font-weight: 500; /* Slightly bolder */
     }
 
     button:hover {
       background: var(--button-hover-bg);
       transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
 
     button:active {
-      transform: translateY(0);
-    }
-
-    button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-      transform: none;
+      background: var(--button-active-bg);
+      transform: scale(0.98); /* Subtle press effect */
     }
 
     .flex {
@@ -162,9 +173,10 @@
       }
       
       .container {
-        padding: 1.5rem;
+        padding: 1rem;
         min-height: 100vh;
         border-radius: 0;
+        box-shadow: none; /* Remove shadow on small screens */
       }
     }
   </style>
