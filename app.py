@@ -17,15 +17,16 @@ funny_names = [
     "Bouncy Bunny", "Charming Chinchilla", "Radiant Raccoon", "Dizzy Dingo"
 ]
 
+# Global rooms dictionary (ensure it persists)
+if 'rooms' not in globals():
+    rooms = {}
+
 # Word list for three-word room codes
 room_words = [
     "sun", "house", "steak", "moon", "tree", "river", "cloud", "stone", "wind",
     "lake", "bird", "fish", "star", "hill", "path", "rain", "snow", "fire",
     "leaf", "wave", "sand", "rock", "sky", "field", "door", "light", "shadow"
 ]
-
-# Store rooms and messages
-rooms = {}
 
 class ChatRoom:
     def __init__(self, room_id):
@@ -94,7 +95,9 @@ def handle_disconnect():
             room.remove_client(request.sid, user_name)
             if not room.clients:  # If room is empty, remove it
                 rooms.pop(room_id, None)
+            print(f"Room '{room_id}' removed. Remaining rooms: {list(rooms.keys())}")
             break
+    print(f"Rooms after disconnect: {list(rooms.keys())}")
 
 @socketio.on('create')
 def handle_create():
@@ -115,6 +118,7 @@ def handle_create():
     
     emit('created', {'type': 'created', 'roomId': room_id, 'userName': user_name})
     print(f"Room created successfully: '{room_id}'")
+    print(f"Rooms after creation: {list(rooms.keys())}")
 
 @socketio.on('join')
 def handle_join(data):
