@@ -6,6 +6,11 @@ from datetime import datetime
 from openai import OpenAI
 from dotenv import load_dotenv
 import os
+import argparse
+import base64
+from io import BytesIO
+from PIL import Image
+import requests
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key'
@@ -13,6 +18,12 @@ load_dotenv()
 openai_client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 
 socketio = SocketIO(app, cors_allowed_origins="*")
+
+# Parse command-line argument for image generation
+parser = argparse.ArgumentParser(description="Meiluft Chat with optional image generation")
+parser.add_argument('--generate-images', action='store_true', help="Enable image generation for rooms")
+args = parser.parse_args()
+GENERATE_IMAGES = args.generate_images
 
 # Funny names for users
 funny_names = [
@@ -46,6 +57,10 @@ class ChatRoom:
         self.messages = []
         self.assigned_names = set()
         self.ai_name = "AIWitMaster"
+        if GENERATE_IMAGES:
+            self.image_base64 = self.generate_room_image(room_id)
+        else:
+            self.image_base64 = None
     
     def add_client(self, sid, user_name=None):
         self.clients.add(sid)
@@ -79,7 +94,6 @@ class ChatRoom:
         return name
     
     def get_ai_response(self, message_content, history):
-        """Get a response from GPT-4o-mini based on chat history."""
         messages = [{'role': 'system', 'content': 'You are a friendly, witty AI assistant named AIWitMaster. Keep responses concise (under 50 words) and complete, avoiding cutoffs.'}]
         messages.extend(history)  # Include chat history
         messages.append({'role': 'user', 'content': message_content})
@@ -92,7 +106,6 @@ class ChatRoom:
         return response.choices[0].message.content.strip()
 
     def handle_ai_response(self, message_content):
-        """Determine if AI should respond and generate a response."""
         num_clients = len(self.clients)
         history = [{'role': 'user' if msg['sender'] != self.ai_name else 'assistant', 
                     'content': msg['content']} for msg in self.messages[-5:]]  # Last 5 messages for context
@@ -102,6 +115,25 @@ class ChatRoom:
         elif message_content.startswith('ai:'):  # Multiple users: AI responds only if invoked
             return self.get_ai_response(message_content[3:].strip(), history)
         return None
+
+    def generate_room_image(self, room_id):
+        if not GENERATE_IMAGES:
+            return None
+        words = room_id.split('.')
+        prompt = f"A whimsical illustration of {words[0]}, {words[1]}, and {words[2]}, in a fantasy style, vibrant colors, 256x256 resolution"
+        response = openai_client.images.generate(
+            model="dall-e-2",
+            prompt=prompt,
+            n=1,
+            size="256x256"
+        )
+        image_url = response.data[0].url
+        # Fetch and convert image to base64
+        response = requests.get(image_url)
+        image = Image.open(BytesIO(response.content))
+        buffered = BytesIO()
+        image.save(buffered, format="PNG")
+        return base64.b64encode(buffered.getvalue()).decode('utf-8')
 
 def generate_room_id():
     return '.'.join(random.choice(room_words) for _ in range(3))
@@ -147,7 +179,8 @@ def handle_create():
         session['user_names'] = {}
     session['user_names'][room_id] = user_name
     
-    emit('created', {'type': 'created', 'roomId': room_id, 'userName': user_name})
+    emit('created', {'type': 'created', 'roomId': room_id, 'userName': user_name,
+                     'imageBase64': room.image_base64 if GENERATE_IMAGES else None})
     print(f"Room created successfully: '{room_id}'")
     print(f"Rooms after creation: {list(rooms.keys())}")
 
@@ -173,7 +206,8 @@ def handle_join(data):
         if room.messages:
             emit('history', {'type': 'history', 'messages': room.messages})
         
-        emit('joined', {'type': 'joined', 'roomId': room_id, 'userName': user_name})
+        emit('joined', {'type': 'joined', 'roomId': room_id, 'userName': user_name,
+                        'imageBase64': room.image_base64 if GENERATE_IMAGES else None})
     else:
         emit('error', {'type': 'error', 'message': f"Room '{room_id}' not found"})
 

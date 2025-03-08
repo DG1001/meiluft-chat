@@ -198,6 +198,7 @@
     </div>
 
     <div class="chat-container">
+      <img id="room-image" src="" alt="Room Illustration" style="max-width: 100%; border-radius: var(--border-radius); margin-bottom: 1rem; display: none;">
       <div class="room-code" id="room-code-display"></div>
       <div class="messages" id="messages"></div>
       <div class="flex">
@@ -228,6 +229,13 @@
       socket.on('created', (data) => {
         console.log('Room created:', data);
         roomCodeDisplay.textContent = `Room Code: ${data.roomId} | Your Name: ${data.userName}`;
+        const roomImage = document.getElementById('room-image');
+        if (data.imageBase64) {
+          roomImage.src = `data:image/png;base64,${data.imageBase64}`;
+          roomImage.style.display = 'block';
+        } else {
+          roomImage.style.display = 'none';
+        }
         startContainer.style.display = 'none';
         chatContainer.style.display = 'block';
       });
@@ -235,6 +243,13 @@
       socket.on('joined', (data) => {
         console.log('Room joined:', data);
         roomCodeDisplay.textContent = `Room Code: ${data.roomId} | Your Name: ${data.userName}`;
+        const roomImage = document.getElementById('room-image');
+        if (data.imageBase64) {
+          roomImage.src = `data:image/png;base64,${data.imageBase64}`;
+          roomImage.style.display = 'block';
+        } else {
+          roomImage.style.display = 'none';
+        }
         startContainer.style.display = 'none';
         chatContainer.style.display = 'block';
       });
