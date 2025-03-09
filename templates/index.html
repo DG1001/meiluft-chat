@@ -216,6 +216,9 @@
     </div>
   </div>
 
+  <script>
+    const initialRoomId = "{{ room_id | default('') | escape }}";
+  </script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.1/socket.io.js"></script>
   <script>
     let socket;
@@ -233,6 +236,11 @@
         console.log('Socket.IO connection established');
         document.getElementById('create-room').disabled = false;
         document.getElementById('join-room').disabled = false;
+        // Automatischer Join bei Seitenlade, wenn room_id gegeben
+        if (initialRoomId && chatContainer.style.display !== 'block') {
+          console.log(`Auto-joining room: ${initialRoomId}`);
+          socket.emit('join', { roomId: initialRoomId });
+        }
       });
 
       socket.on('created', (data) => {

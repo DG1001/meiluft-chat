@@ -180,10 +180,33 @@ def save_rooms():
 def index():
     return render_template('index.html')
 
+@app.route('/<room_id>')
+def join_room_by_url(room_id):
+    return render_template('index.html', room_id=room_id)
+
 # Socket events
 @socketio.on('connect')
 def handle_connect():
     print(f"Client connected: {request.sid}")
+    room_id = request.args.get('room_id')  # Vom Template übergeben
+    if room_id and room_id in rooms:
+        room = rooms[room_id]
+        user_name = room.add_client(request.sid)
+        join_room(room_id)
+        
+        # Store user name in session
+        if 'user_names' not in session:
+            session['user_names'] = {}
+        session['user_names'][room_id] = user_name
+        
+        # Send chat history
+        if room.messages:
+            emit('history', {'type': 'history', 'messages': room.messages})
+        
+        emit('joined', {'type': 'joined', 'roomId': room_id, 'userName': user_name,
+                       'imageBase64': room.image_base64 if GENERATE_IMAGES else None,
+                       'generateImages': GENERATE_IMAGES})
+        print(f"Auto-joined room '{room_id}' on connect")
 
 @socketio.on('disconnect')
 def handle_disconnect():
