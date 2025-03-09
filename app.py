@@ -26,7 +26,6 @@ args = parser.parse_args()
 GENERATE_IMAGES = args.generate_images
 
 # Import json and define the path for the rooms file
-import json
 ROOMS_FILE = 'rooms.json'
 
 # Funny names for users
@@ -39,38 +38,6 @@ funny_names = [
     "Prancing Puma", "Snoozy Sparrow", "Jumpy Jaguar", "Kooky Koala", "Merry Meerkat",
     "Bizarre Badger", "Cuddly Coyote", "Fizzy Ferret", "Hoppy Hippo", "Puffy Puffin",
     "Snazzy Squirrel", "Twirly Turtle", "Vivid Vulture", "Wiggly Weasel", "Zippy Zucchini"
-]
-
-# Global rooms dictionary (ensure it persists)
-def load_rooms():
-    global rooms
-    try:
-        with open(ROOMS_FILE, 'r') as f:
-            data = json.load(f)
-            rooms = {}
-            for room_id, room_data in data.items():
-                room = ChatRoom(room_id)
-                room.clients = set()  # Clients werden nicht persistiert
-                room.messages = room_data.get('messages', [])
-                room.assigned_names = set(room_data.get('assigned_names', []))
-                room.ai_name = room_data.get('ai_name', 'AIWitMaster')
-                # image_base64 wird nicht geladen, bleibt None
-                rooms[room_id] = room
-    except FileNotFoundError:
-        rooms = {}
-    except json.JSONDecodeError:
-        print(f"Error decoding {ROOMS_FILE}, starting with empty rooms.")
-        rooms = {}
-
-load_rooms()
-
-# Word list for three-word room codes
-room_words = [
-    "apple", "bear", "bird", "boat", "book", "cake", "cat", "cloud", "deer", "dog",
-    "door", "duck", "eagle", "fish", "flower", "fox", "frog", "gate", "goat", "hat",
-    "hill", "horse", "house", "key", "lake", "leaf", "lion", "moon", "mouse", "owl",
-    "path", "pig", "rain", "river", "rock", "rose", "sand", "sheep", "sky", "snow",
-    "star", "stone", "sun", "tree", "wave", "wind", "wolf", "wood", "zebra"
 ]
 
 class ChatRoom:
@@ -160,6 +127,28 @@ class ChatRoom:
         buffered = BytesIO()
         image.save(buffered, format="PNG")
         return base64.b64encode(buffered.getvalue()).decode('utf-8')
+
+def load_rooms():
+    global rooms
+    try:
+        with open(ROOMS_FILE, 'r') as f:
+            data = json.load(f)
+            rooms = {}
+            for room_id, room_data in data.items():
+                room = ChatRoom(room_id)
+                room.clients = set()  # Clients werden nicht persistiert
+                room.messages = room_data.get('messages', [])
+                room.assigned_names = set(room_data.get('assigned_names', []))
+                room.ai_name = room_data.get('ai_name', 'AIWitMaster')
+                # image_base64 wird nicht geladen, bleibt None
+                rooms[room_id] = room
+    except FileNotFoundError:
+        rooms = {}
+    except json.JSONDecodeError:
+        print(f"Error decoding {ROOMS_FILE}, starting with empty rooms.")
+        rooms = {}
+
+load_rooms()
 
 def generate_room_id():
     return '.'.join(random.choice(room_words) for _ in range(3))
