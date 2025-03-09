@@ -291,7 +291,7 @@
             generateImageButton.style.display = 'none'; // Button ausblenden, wenn Bild existiert
         } else {
             roomImage.style.display = 'none';
-            generateImageButton.style.display = 'block'; // Button anzeigen, wenn kein Bild
+            generateImageButton.style.display = data.generateImages ? 'block' : 'none'; // Nur anzeigen, wenn generateImages true
         }
     }
 

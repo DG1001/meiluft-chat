@@ -22,6 +22,7 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 # Parse command-line argument for image generation
 parser = argparse.ArgumentParser(description="Meiluft Chat with optional image generation")
 parser.add_argument('--generate-images', action='store_true', help="Enable image generation for rooms")
+parser.add_argument('--port', type=int, default=6000, help="Port to run the server on (default: 6000)")
 args = parser.parse_args()
 GENERATE_IMAGES = args.generate_images
 
@@ -215,7 +216,8 @@ def handle_create():
     session['user_names'][room_id] = user_name
     
     emit('created', {'type': 'created', 'roomId': room_id, 'userName': user_name,
-                     'imageBase64': room.image_base64 if GENERATE_IMAGES else None})
+                     'imageBase64': room.image_base64 if GENERATE_IMAGES else None,
+                     'generateImages': GENERATE_IMAGES})
     print(f"Room created successfully: '{room_id}'")
     print(f"Rooms after creation: {list(rooms.keys())}")
     save_rooms()
@@ -243,7 +245,8 @@ def handle_join(data):
             emit('history', {'type': 'history', 'messages': room.messages})
         
         emit('joined', {'type': 'joined', 'roomId': room_id, 'userName': user_name,
-                        'imageBase64': room.image_base64 if GENERATE_IMAGES else None})
+                        'imageBase64': room.image_base64 if GENERATE_IMAGES else None,
+                        'generateImages': GENERATE_IMAGES})
         save_rooms()
     else:
         emit('error', {'type': 'error', 'message': f"Room '{room_id}' not found"})
@@ -289,4 +292,4 @@ def handle_generate_image():
     save_rooms()  # Optional, da image_base64 nicht persistiert wird
 
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=5000, debug=True, use_reloader=False)
+    socketio.run(app, host='0.0.0.0', port=args.port, debug=True, use_reloader=False)
