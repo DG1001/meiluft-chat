@@ -25,6 +25,10 @@ parser.add_argument('--generate-images', action='store_true', help="Enable image
 args = parser.parse_args()
 GENERATE_IMAGES = args.generate_images
 
+# Import json and define the path for the rooms file
+import json
+ROOMS_FILE = 'rooms.json'
+
 # Funny names for users
 funny_names = [
     "Silly Goose", "Wacky Wombat", "Crazy Cat", "Bubbly Bear", "Jolly Jellyfish",
@@ -38,8 +42,27 @@ funny_names = [
 ]
 
 # Global rooms dictionary (ensure it persists)
-if 'rooms' not in globals():
-    rooms = {}
+def load_rooms():
+    global rooms
+    try:
+        with open(ROOMS_FILE, 'r') as f:
+            data = json.load(f)
+            rooms = {}
+            for room_id, room_data in data.items():
+                room = ChatRoom(room_id)
+                room.clients = set()  # Clients werden nicht persistiert
+                room.messages = room_data.get('messages', [])
+                room.assigned_names = set(room_data.get('assigned_names', []))
+                room.ai_name = room_data.get('ai_name', 'AIWitMaster')
+                # image_base64 wird nicht geladen, bleibt None
+                rooms[room_id] = room
+    except FileNotFoundError:
+        rooms = {}
+    except json.JSONDecodeError:
+        print(f"Error decoding {ROOMS_FILE}, starting with empty rooms.")
+        rooms = {}
+
+load_rooms()
 
 # Word list for three-word room codes
 room_words = [
@@ -141,6 +164,18 @@ class ChatRoom:
 def generate_room_id():
     return '.'.join(random.choice(room_words) for _ in range(3))
 
+# Function to save rooms to JSON file
+def save_rooms():
+    data = {}
+    for room_id, room in rooms.items():
+        data[room_id] = {
+            'messages': room.messages,
+            'assigned_names': list(room.assigned_names),
+            'ai_name': room.ai_name
+        }
+    with open(ROOMS_FILE, 'w') as f:
+        json.dump(data, f, indent=4)
+
 # Routes
 @app.route('/')
 def index():
@@ -159,10 +194,9 @@ def handle_disconnect():
         if request.sid in room.clients:
             user_name = next((name for name in room.assigned_names if name in session.get('user_names', {}).values()), None)
             room.remove_client(request.sid, user_name)
-            if not room.clients:  # If room is empty, remove it
-                rooms.pop(room_id, None)
-            print(f"Room '{room_id}' removed. Remaining rooms: {list(rooms.keys())}")
+            print(f"Client removed from '{room_id}'. Remaining clients: {len(room.clients)}")
             break
+    save_rooms()  # Speichere die Räume nach jedem Disconnect
     print(f"Rooms after disconnect: {list(rooms.keys())}")
 
 @socketio.on('create')
@@ -186,6 +220,7 @@ def handle_create():
                      'imageBase64': room.image_base64 if GENERATE_IMAGES else None})
     print(f"Room created successfully: '{room_id}'")
     print(f"Rooms after creation: {list(rooms.keys())}")
+    save_rooms()
 
 @socketio.on('join')
 def handle_join(data):
@@ -211,6 +246,7 @@ def handle_join(data):
         
         emit('joined', {'type': 'joined', 'roomId': room_id, 'userName': user_name,
                         'imageBase64': room.image_base64 if GENERATE_IMAGES else None})
+        save_rooms()
     else:
         emit('error', {'type': 'error', 'message': f"Room '{room_id}' not found"})
 
@@ -242,6 +278,7 @@ def handle_message(data):
                 'content': ai_response,
                 'sender': room.ai_name
             }, room=room_id)
+    save_rooms()
 
 @socketio.on('generate_image')
 def handle_generate_image():
@@ -251,6 +288,7 @@ def handle_generate_image():
         image_base64 = room.trigger_image_generation()
         if image_base64:
             emit('image_generated', {'type': 'image_generated', 'imageBase64': image_base64}, room=room_id)
+    save_rooms()  # Optional, da image_base64 nicht persistiert wird
 
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=5000, debug=True, use_reloader=False)
