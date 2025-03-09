@@ -162,6 +162,13 @@
       transform: scale(0.98); /* Subtle press effect */
     }
 
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none; /* Verhindert Hover-Effekte */
+      background: linear-gradient(135deg, #999, #666); /* Grauer Ersatz während Deaktivierung */
+    }
+
     .flex {
       display: flex;
       gap: 0.75rem;
@@ -198,7 +205,7 @@
     </div>
 
     <div class="chat-container">
-      <button id="generate-image" style="display: none; margin-bottom: 1rem;">Generate Room Image</button>
+      <button id="generate-image" style="display: none; margin-bottom: 1rem; width: 100%;">Generate Room Image</button>
       <img id="room-image" src="" alt="Room Illustration" style="max-width: 100%; border-radius: var(--border-radius); margin-bottom: 1rem; display: none; display: block; margin: 0 auto;">
       <div class="room-code" id="room-code-display"></div>
       <div class="messages" id="messages"></div>
@@ -259,12 +266,16 @@
 
       socket.on('error', (data) => {
         console.error('Error:', data);
+        generateImageButton.disabled = false; // Button wieder aktivieren
+        generateImageButton.textContent = 'Generate Room Image'; // Text zurücksetzen
         alert(data.message);
       });
 
       socket.on('image_generated', (data) => {
         console.log('Image generated:', data);
         updateImageDisplay(data); // Bild anzeigen und Button ausblenden
+        generateImageButton.disabled = false; // Button wieder aktivieren (falls sichtbar)
+        generateImageButton.textContent = 'Generate Room Image'; // Text zurücksetzen
       });
 
       socket.on('disconnect', () => {
@@ -316,8 +327,12 @@
     });
 
     generateImageButton.addEventListener('click', () => {
-        console.log('Requesting image generation...');
-        socket.emit('generate_image');
+        if (!generateImageButton.disabled) {
+            console.log('Requesting image generation...');
+            generateImageButton.disabled = true; // Button deaktivieren
+            generateImageButton.textContent = 'Generating...'; // Text ändern
+            socket.emit('generate_image');
+        }
     });
 
     function addMessage(content, type, sender) {
