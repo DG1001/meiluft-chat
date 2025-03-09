@@ -40,6 +40,15 @@ funny_names = [
     "Snazzy Squirrel", "Twirly Turtle", "Vivid Vulture", "Wiggly Weasel", "Zippy Zucchini"
 ]
 
+# Word list for three-word room codes
+room_words = [
+    "apple", "bear", "bird", "boat", "book", "cake", "cat", "cloud", "deer", "dog",
+    "door", "duck", "eagle", "fish", "flower", "fox", "frog", "gate", "goat", "hat",
+    "hill", "horse", "house", "key", "lake", "leaf", "lion", "moon", "mouse", "owl",
+    "path", "pig", "rain", "river", "rock", "rose", "sand", "sheep", "sky", "snow",
+    "star", "stone", "sun", "tree", "wave", "wind", "wolf", "wood", "zebra"
+]
+
 class ChatRoom:
     def __init__(self, room_id):
         self.id = room_id
