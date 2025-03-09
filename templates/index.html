@@ -243,13 +243,6 @@
         }
       });
 
-      socket.on('created', (data) => {
-        console.log('Room created:', data);
-        roomCodeDisplay.textContent = `Room Code: ${data.roomId} | Your Name: ${data.userName}`;
-        updateImageDisplay(data); // Bildstatus aktualisieren
-        startContainer.style.display = 'none';
-        chatContainer.style.display = 'block';
-      });
 
       socket.on('joined', (data) => {
         console.log('Room joined:', data);
@@ -284,6 +277,11 @@
         updateImageDisplay(data); // Bild anzeigen und Button ausblenden
         generateImageButton.disabled = false; // Button wieder aktivieren (falls sichtbar)
         generateImageButton.textContent = 'Generate Room Image'; // Text zurücksetzen
+      });
+
+      socket.on('redirect', (data) => {
+        console.log('Redirecting to:', data.url);
+        window.location.href = data.url;  // Redirect zur Raum-URL
       });
 
       socket.on('disconnect', () => {

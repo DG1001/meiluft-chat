@@ -238,9 +238,8 @@ def handle_create():
         session['user_names'] = {}
     session['user_names'][room_id] = user_name
     
-    emit('created', {'type': 'created', 'roomId': room_id, 'userName': user_name,
-                     'imageBase64': room.image_base64 if GENERATE_IMAGES else None,
-                     'generateImages': GENERATE_IMAGES})
+    # Sende Redirect-Anweisung statt nur 'created'
+    emit('redirect', {'url': f'/{room_id}'})
     print(f"Room created successfully: '{room_id}'")
     print(f"Rooms after creation: {list(rooms.keys())}")
     save_rooms()
